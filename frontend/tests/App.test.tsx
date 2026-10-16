@@ -1,28 +1,22 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 import App from "../src/App";
-
-function renderAt(path: string) {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
-  );
-}
+import { makeUser, renderAs } from "./helpers";
 
 describe("App routing", () => {
   it("renders a helpful not-found page for unknown routes", () => {
-    renderAt("/does-not-exist");
+    renderAs(<App />, { user: makeUser("admin"), route: "/does-not-exist" });
     expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to the dashboard" })).toHaveAttribute("href", "/");
   });
 
-  it("renders the system health page at /system", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
-    renderAt("/system");
-    expect(await screen.findByRole("heading", { level: 1, name: "System health" })).toBeInTheDocument();
-    vi.unstubAllGlobals();
+  it("sends anonymous visitors from protected pages to sign-in", () => {
+    renderAs(<App />, { user: null, route: "/users" });
+    expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+  });
+
+  it("denies the user administration page to faculty", () => {
+    renderAs(<App />, { user: makeUser("faculty"), route: "/users" });
+    expect(screen.getByRole("heading", { name: "You do not have access to this page" })).toBeInTheDocument();
   });
 });

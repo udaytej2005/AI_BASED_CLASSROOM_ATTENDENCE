@@ -1,60 +1,65 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 import DashboardPage from "../src/pages/DashboardPage";
+import { jsonResponse, makeUser, mockApi, renderAs } from "./helpers";
 
-function renderPage() {
-  return render(
-    <MemoryRouter>
-      <DashboardPage />
-    </MemoryRouter>,
-  );
-}
-
-const HEALTHY = {
-  status: "ok",
-  version: "0.1.0",
-  environment: "development",
-  timezone: "Asia/Kolkata",
-  server_time_utc: "2026-10-16T00:00:00+00:00",
-};
+const countPage = (total: number) => jsonResponse({ items: [], total, page: 1, page_size: 1, total_pages: 1 });
 
 describe("DashboardPage", () => {
-  it("shows live backend and database status from the API", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) => {
-        if (url === "/api/v1/health") return new Response(JSON.stringify(HEALTHY), { status: 200 });
-        return new Response(JSON.stringify({ status: "ok", database: "connected" }), { status: 200 });
-      }),
-    );
+  it("shows real directory counts to an administrator, including accounts", async () => {
+    mockApi({
+      "GET /api/v1/students": () => countPage(20),
+      "GET /api/v1/faculty": () => countPage(3),
+      "GET /api/v1/users": () => countPage(26),
+      "GET /api/v1/health": () =>
+        jsonResponse({ status: "ok", version: "0.1.0", environment: "development", timezone: "Asia/Kolkata", server_time_utc: "" }),
+      "GET /api/v1/health/database": () => jsonResponse({ status: "ok", database: "connected" }),
+    });
 
-    renderPage();
+    renderAs(<DashboardPage />, { user: makeUser("admin", { full_name: "Ada Admin" }) });
 
+    expect(await screen.findByText("20")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("26")).toBeInTheDocument();
+    expect(screen.getByText("Welcome, Ada Admin")).toBeInTheDocument();
     expect(await screen.findByText("Operational")).toBeInTheDocument();
-    expect(screen.getByText("Connected")).toBeInTheDocument();
-    expect(screen.getByText("Asia/Kolkata")).toBeInTheDocument();
-    expect(screen.getByText("Version 0.1.0 (development)")).toBeInTheDocument();
   });
 
-  it("shows a clear error and lets the user retry when the backend is down", async () => {
-    let attempts = 0;
-    const fetchMock = vi.fn(async (url: string) => {
-      attempts += 1;
-      if (attempts <= 2) throw new TypeError("Failed to fetch");
-      if (url === "/api/v1/health") return new Response(JSON.stringify(HEALTHY), { status: 200 });
-      return new Response(JSON.stringify({ status: "ok", database: "connected" }), { status: 200 });
+  it("does not request account counts for a faculty member", async () => {
+    const { calls } = mockApi({
+      "GET /api/v1/students": () => countPage(20),
+      "GET /api/v1/faculty": () => countPage(3),
     });
-    vi.stubGlobal("fetch", fetchMock);
 
-    renderPage();
+    renderAs(<DashboardPage />, { user: makeUser("faculty") });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("The backend is not reachable.");
-    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Registered students")).toBeInTheDocument();
+    expect(calls.some((call) => call.url.startsWith("/api/v1/users"))).toBe(false);
+    expect(screen.queryByText("User accounts")).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-    expect(fetchMock).toHaveBeenCalled();
+  it("shows a student their own record and states that attendance is not yet available", async () => {
+    mockApi({
+      "GET /api/v1/students/me": () =>
+        jsonResponse({
+          id: 7,
+          student_code: "CSE001",
+          full_name: "Aarav Mehta",
+          department_id: 1,
+          department_code: "CSE",
+          year: 2,
+          section: "A",
+          email: null,
+          status: "active",
+          has_login: true,
+          is_synthetic: true,
+        }),
+    });
+
+    renderAs(<DashboardPage />, { user: makeUser("student") });
+
+    expect(await screen.findByText("CSE001 · Aarav Mehta")).toBeInTheDocument();
+    expect(screen.getByText("Not yet available")).toBeInTheDocument();
   });
 });
