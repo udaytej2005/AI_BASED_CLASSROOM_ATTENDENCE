@@ -46,3 +46,29 @@ Last updated: 2026-10-16.
     `MAX_REQUEST_BYTES`. A chunked request without `Content-Length` is not limited yet. Upload endpoints added in Phase 4
     must enforce a streamed limit.
 16. **No rate limiting** on any endpoint. Login rate limiting is part of Phase 2.
+
+## Phase 2 limitations (accounts, roles, seed data)
+
+17. **Demo accounts are local-only.** `python -m app.cli seed-demo` creates synthetic students, faculty and users on the
+    `demo.invalid` domain with the documented password `Demo-Local-2026!` (or `DEMO_PASSWORD`). Change or delete them
+    before any real deployment. Never load the seed into a database that holds real records.
+18. **New Phase 2 pages have not been checked in a real browser.** The sign-in, change-password, student, faculty, user
+    account and dashboard screens are covered by unit tests with mocked `fetch`. Rendering, keyboard navigation and
+    screen-reader behaviour still need a browser check.
+19. **Login lockout is per account.** Five failed sign-ins lock an account for 15 minutes. Anyone who knows an email
+    address can therefore lock out that person. There is no per-IP rate limit (see item 16). Accept this for the
+    prototype and revisit before any shared deployment.
+20. **No self-service password reset and no multi-factor authentication.** An administrator sets a temporary password
+    and the person must change it at first sign-in. Losing the admin password needs a local command-line reset, which
+    is not yet documented.
+21. **Attendance rules are configurable, not official.** Thresholds such as the minimum attendance percentage and the
+    late-arrival window will be stored as settings in Phase 3. They are not college regulations and must be confirmed
+    by the institution before use.
+22. **Session cookie `Secure` flag depends on the environment.** It is set only when `APP_ENV=production`. Local
+    development uses plain HTTP. Production must sit behind HTTPS.
+23. **Roll number is the student code.** The PRD speaks of roll numbers; the prototype stores one `student_code` per
+    student and has no separate roll-number field.
+24. **Student contact email is hidden from students themselves** in `/students/me`, returning `null`. This is a deliberate
+    choice to keep the response minimal; a profile-editing screen is not implemented.
+25. **PostgreSQL in the sandbox came from the `pgserver` PyPI package.** It was used only to verify the migrations and
+    tests. It is not a project dependency. Local development instructions still use a standard PostgreSQL install.

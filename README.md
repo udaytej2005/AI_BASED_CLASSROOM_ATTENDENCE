@@ -3,9 +3,10 @@
 An academic prototype for recording classroom attendance from an authorised camera, linked to a timetable,
 with faculty review and role-based dashboards. It is built as a final-year project.
 
-> **Status: Phase 1 (foundation) complete.** The app starts, connects to PostgreSQL, runs migrations, and shows live
-> backend and database health. Authentication, students, timetable, face recognition, attendance, and dashboards are
-> **not built yet**. See [`docs/implementation-status.md`](docs/implementation-status.md) for the full checklist.
+> **Status: Phase 2 (accounts, roles, directory) implemented and tested.** Sign-in with hashed passwords, role-based
+> access, student and faculty management, user accounts, audit records, and a synthetic seed are in place. Timetable,
+> face recognition, attendance sessions, and attendance dashboards are **not built yet**. Browser-level checks of the
+> new pages are still outstanding. See [`docs/implementation-status.md`](docs/implementation-status.md) for the full checklist.
 
 > **Responsible use:** Face recognition is probabilistic and can make mistakes. Use it only with consenting volunteers and
 > institutional approval. Recognition results are never a basis for disciplinary decisions. Read
@@ -82,8 +83,20 @@ reach a classroom camera. It will send only recognition results to the backend.
 Runs backend lint (ruff), type checks (mypy), tests (pytest), frontend type checks (tsc), lint (ESLint), tests (Vitest),
 a production build, and a check that no secrets or data files are tracked by Git.
 
-Current results (Phase 1): 14 backend tests and 11 frontend tests pass. The backend suite also passes against PostgreSQL
+Current results (Phase 2): 74 backend tests and 45 frontend tests pass. The backend suite also passes against PostgreSQL
 16.2 when `TEST_DATABASE_URL` is set.
+
+### Creating the first administrator and local demo data
+
+```bash
+cd backend && source .venv/bin/activate
+python -m app.cli create-admin --email you@example.edu --name "Your Name" --password-stdin   # reads the password from stdin
+python -m app.cli seed-demo          # OPTIONAL: synthetic students, faculty and users for local testing only
+```
+
+**Demo accounts are local-only.** The seed creates accounts on the `demo.invalid` domain with the documented password
+`Demo-Local-2026!` (override with `DEMO_PASSWORD`). **Change or delete them before any real deployment.** Never seed a
+database that holds real student records.
 
 ## Documentation
 
@@ -98,8 +111,9 @@ Planned documentation (from the master prompt) is listed as not started in the i
 
 - Passwords and secrets never belong in code or Git. Use `backend/.env`, which is git-ignored.
 - Biometric and personal data stay under `data/` or in the database, and are never committed.
-- The API currently exposes only non-sensitive health information. Authentication is the next phase.
-- Demo accounts (Phase 2) will be clearly marked and must be changed before any real deployment.
+- Sign-in uses Argon2id password hashes and an HTTP-only session cookie. Administrator changes are audited.
+- Students can see only their own record. Faculty do not see email addresses. Passwords and tokens never appear in logs.
+- Demo accounts are marked as synthetic and must be changed before any real deployment (see above).
 
 ## License
 

@@ -1,6 +1,6 @@
 # Installation and troubleshooting
 
-This guide covers the Phase 1 foundation: backend API, PostgreSQL database, and frontend dev server.
+This guide covers the Phase 1 foundation and the Phase 2 accounts, roles and seed data: backend API, PostgreSQL database, and frontend dev server. Use the seed and admin commands in the README; demo accounts are local-only.
 Camera and face-recognition setup will be added in Phase 4.
 
 > **Verification note:** The Linux commands were executed end-to-end in the development sandbox (Debian 12). The Windows
