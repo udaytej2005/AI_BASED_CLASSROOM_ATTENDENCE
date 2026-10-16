@@ -78,3 +78,22 @@ Each decision has a status: **Accepted**, **Provisional** (to be revisited when 
 - **Status:** Accepted
 - **Decision:** Navigation items for unbuilt features are rendered as disabled "Planned" labels. This keeps the planned
   information architecture visible without implying working features.
+
+## ADR-009: Phase 4 model choice (follow-up to ADR-004)
+
+- **Status:** Accepted for the prototype. Accuracy not yet measured.
+- **Decision:** Use OpenCV YuNet (`face_detection_yunet_2023mar.onnx`) for detection and OpenCV SFace
+  (`face_recognition_sface_2021dec.onnx`) for 128-dimension embeddings, behind the `FaceDetector` and `FaceEmbedder`
+  protocols in `backend/app/vision/backend.py`.
+- **Weight licences (read from the upstream model folders at pinned commit `47534e27…`):**
+  - YuNet: MIT (`models/LICENSES/face_detection_yunet.LICENSE.txt`). Its README cites WIDER FACE for training. That
+    data is distributed for research use, and its terms are not re-checked here. Institutional sign-off is needed.
+  - SFace: Apache-2.0 (`models/LICENSES/face_recognition_sface.LICENSE.txt`). The README does not state the training
+    data, so its data terms remain **unverified**. This must be disclosed in the thesis and checked before any use
+    beyond the prototype.
+- **Why not InsightFace:** ADR-004 records that the popular InsightFace pretrained packs are documented for
+  non-commercial research use. They were not downloaded or benchmarked, so this project does not depend on them.
+- **Not done (ADR-004 asked for it):** A measured comparison on a separated, consented test set. No accuracy,
+  false-accept or false-reject figure is claimed. The SFace README reports 0.9940 accuracy on its own benchmark
+  (publisher-reported, not reproduced here).
+- **Threshold:** Cosine 0.363 is the default from OpenCV's demo. It must be calibrated on the institution's own test set.

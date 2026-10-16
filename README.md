@@ -3,10 +3,12 @@
 An academic prototype for recording classroom attendance from an authorised camera, linked to a timetable,
 with faculty review and role-based dashboards. It is built as a final-year project.
 
-> **Status: Phase 2 (accounts, roles, directory) implemented and tested.** Sign-in with hashed passwords, role-based
-> access, student and faculty management, user accounts, audit records, and a synthetic seed are in place. Timetable,
-> face recognition, attendance sessions, and attendance dashboards are **not built yet**. Browser-level checks of the
-> new pages are still outstanding. See [`docs/implementation-status.md`](docs/implementation-status.md) for the full checklist.
+> **Status: Phases 0–3 implemented and tested; Phase 4 (enrolment and recognition engine) implemented and tested
+> with synthetic data.** The backend has accounts and roles, the academic structure and timetable (Asia/Kolkata),
+> attendance sessions limited to class periods, consent and face enrolment, and recognition that marks students present
+> only after temporal verification. **Not yet validated:** no webcam test, no real students, and no measured recognition
+> accuracy. Attendance screens and dashboards (Phases 5–6) are **not built yet**. Browser-level checks are outstanding.
+> See [`docs/implementation-status.md`](docs/implementation-status.md) for the full checklist.
 
 > **Responsible use:** Face recognition is probabilistic and can make mistakes. Use it only with consenting volunteers and
 > institutional approval. Recognition results are never a basis for disciplinary decisions. Read
@@ -16,7 +18,7 @@ with faculty review and role-based dashboards. It is built as a final-year proje
 
 | Path | Purpose |
 |---|---|
-| `backend/` | FastAPI API, SQLAlchemy models (none yet), Alembic migrations, pytest tests |
+| `backend/` | FastAPI API, SQLAlchemy models, Alembic migrations (0001–0005), vision package, pytest tests |
 | `frontend/` | React + TypeScript + Vite web app, Tailwind CSS, Vitest tests |
 | `scripts/check.sh` | Runs all automated checks (lint, types, tests, build, secret hygiene) |
 | `data/` | Local-only folder for biometric or personal data (git-ignored; see `data/README.md`) |
@@ -69,10 +71,10 @@ npm run dev
 | Database | PostgreSQL server | Start through the PostgreSQL service | `localhost:5432` |
 | Backend API | FastAPI app serving `/api/v1` | `uvicorn app.main:app` in `backend/` | <http://localhost:8000/api/docs> |
 | Frontend | Vite dev server; proxies `/api` to the backend | `npm run dev` in `frontend/` | <http://localhost:5173> |
-| Camera / recognition worker | **Not built yet** (Phase 4). It will run on the faculty computer with the webcam. | - | - |
+| Camera recognition | Runs inside the backend as a background job, started through the API (`/sessions/{id}/recognition/camera`). It needs a camera reachable from the backend machine (Phase 4; not tested on hardware). | - | - |
 
-The camera worker will run on the computer that has the webcam, because a browser or a cloud sandbox cannot reliably
-reach a classroom camera. It will send only recognition results to the backend.
+Camera runs need the backend to be able to reach the classroom camera (the faculty computer or a server on the
+same network). A browser cannot read the camera itself.
 
 ### Checks
 
@@ -83,8 +85,8 @@ reach a classroom camera. It will send only recognition results to the backend.
 Runs backend lint (ruff), type checks (mypy), tests (pytest), frontend type checks (tsc), lint (ESLint), tests (Vitest),
 a production build, and a check that no secrets or data files are tracked by Git.
 
-Current results (Phase 2): 74 backend tests and 45 frontend tests pass. The backend suite also passes against PostgreSQL
-16.2 when `TEST_DATABASE_URL` is set.
+Current results: see `docs/implementation-status.md` (the backend suite passes on SQLite and PostgreSQL 16.2 when
+`TEST_DATABASE_URL` is set).
 
 ### Creating the first administrator and local demo data
 
@@ -93,6 +95,18 @@ cd backend && source .venv/bin/activate
 python -m app.cli create-admin --email you@example.edu --name "Your Name" --password-stdin   # reads the password from stdin
 python -m app.cli seed-demo          # OPTIONAL: synthetic students, faculty and users for local testing only
 ```
+
+### Face recognition models (Phase 4, optional)
+
+Enrolment and recognition need two model files. They are not stored in Git. Download and verify them once:
+
+```bash
+scripts/fetch_face_models.sh     # about 1.1 GB; checks SHA-256 against pinned values
+```
+
+Without them, enrolment and recognition return HTTP 503 and the rest of the system still works. Read
+[`docs/face-recognition.md`](docs/face-recognition.md) first. It covers consent, retention, limits, and what has not
+been measured. Run `python -m app.cli purge-biometrics` on a schedule to delete expired embeddings.
 
 **Demo accounts are local-only.** The seed creates accounts on the `demo.invalid` domain with the documented password
 `Demo-Local-2026!` (override with `DEMO_PASSWORD`). **Change or delete them before any real deployment.** Never seed a
