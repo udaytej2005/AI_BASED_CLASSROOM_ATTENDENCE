@@ -1,0 +1,24 @@
+[project]
+name = "smart-classroom-attendance-backend"
+version = "0.1.0"
+description = "FastAPI backend for the AI-based smart classroom attendance prototype"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+files = ["app", "alembic/env.py"]
+exclude = ["alembic/versions"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
