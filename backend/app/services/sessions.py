@@ -231,3 +231,8 @@ def current_session_for_class(db: Session, class_id: int) -> AttendanceSession |
         .where(AttendanceSession.class_id == class_id, AttendanceSession.status == "open")
         .order_by(AttendanceSession.id.desc())
     )
+
+
+def may_manage_session(db: Session, user: User, session: AttendanceSession) -> bool:
+    """Public check used by other services: administrators and the assigned faculty member."""
+    return _may_manage(db, user, session)

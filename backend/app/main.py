@@ -11,8 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from app.api.v1.router import api_router
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.errors import AppError
+from app.services.enrollment import MAX_IMAGE_BYTES
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -32,6 +33,15 @@ def _origin_allowed(request: Request, allowed_origins: list[str]) -> bool:
         return True
     host = request.headers.get("host", "")
     return urlsplit(origin).netloc == host
+
+
+def _body_limit(method: str, path: str, settings: Settings) -> int:
+    """Per-route body limits. Uploads get room for their own size caps; everything else uses the default."""
+    if method == "POST" and path.endswith("/enrollment"):
+        return settings.enrollment_max_images * MAX_IMAGE_BYTES + 1024 * 1024
+    if method == "POST" and path.endswith("/video"):
+        return settings.max_video_upload_bytes
+    return settings.max_request_bytes
 
 
 def create_app() -> FastAPI:
@@ -70,7 +80,8 @@ def create_app() -> FastAPI:
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         declared = request.headers.get("content-length")
-        if declared is not None and declared.isdigit() and int(declared) > settings.max_request_bytes:
+        limit = _body_limit(request.method, request.url.path, settings)
+        if declared is not None and declared.isdigit() and int(declared) > limit:
             return JSONResponse(status_code=413, content={"detail": "Request body too large."})
         if request.method in UNSAFE_METHODS and not _origin_allowed(request, settings.cors_origins):
             return JSONResponse(status_code=403, content={"detail": "Cross-site request rejected."})

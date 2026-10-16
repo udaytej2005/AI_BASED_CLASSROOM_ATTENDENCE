@@ -64,6 +64,11 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("seed-demo", help="Create synthetic demonstration data (idempotent, never in production)")
 
+    purge = sub.add_parser("purge-biometrics", help="Delete face embeddings older than the retention period")
+    purge.add_argument(
+        "--retention-days", type=int, default=None, help="Override BIOMETRIC_RETENTION_DAYS once"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "create-admin":
@@ -80,6 +85,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
         print(f"Administrator account created for {normalize_email(args.email)}.")
+        return 0
+
+    if args.command == "purge-biometrics":
+        from app.services.enrollment import purge_expired
+
+        with get_session_factory()() as db:
+            deleted = purge_expired(db, retention_days=args.retention_days)
+        print(f"Deleted {deleted} expired face embedding(s).")
         return 0
 
     if args.command == "seed-demo":

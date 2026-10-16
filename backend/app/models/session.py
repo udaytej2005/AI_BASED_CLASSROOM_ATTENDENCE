@@ -1,5 +1,7 @@
-"""Attendance sessions: one live or finalised run per timetable period. Attendance rows are added in Phase
-5."""
+"""Attendance sessions: one live or finalised run per timetable period.
+
+Phase 4 adds automatic ``present`` rows (see attendance.py). Absent rows and corrections come in Phase 5.
+"""
 
 from datetime import date, datetime
 
