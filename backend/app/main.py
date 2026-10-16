@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -56,6 +57,13 @@ def create_app() -> FastAPI:
     @app.exception_handler(AppError)
     async def handle_app_error(_request: Request, exc: AppError) -> JSONResponse:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(_request: Request, exc: RequestValidationError) -> JSONResponse:
+        # FastAPI's default 422 body echoes the rejected value and its context. That would leak passwords,
+        # embeddings or stream URLs with credentials. Keep only where and what went wrong.
+        details = [{"loc": list(err["loc"]), "msg": err["msg"], "type": err["type"]} for err in exc.errors()]
+        return JSONResponse(status_code=422, content={"detail": details})
 
     @app.middleware("http")
     async def request_guards(

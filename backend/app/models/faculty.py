@@ -15,7 +15,9 @@ class Faculty(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id", ondelete="RESTRICT"), nullable=False)
+    department_id: Mapped[int] = mapped_column(
+        ForeignKey("departments.id", ondelete="RESTRICT"), nullable=False
+    )
     email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     status: Mapped[str] = mapped_column(String(10), default="active", nullable=False)
     user_id: Mapped[int | None] = mapped_column(

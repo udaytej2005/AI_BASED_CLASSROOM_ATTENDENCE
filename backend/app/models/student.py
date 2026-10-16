@@ -6,7 +6,8 @@ from app.models.base import TimestampMixin
 
 
 class Student(TimestampMixin, Base):
-    """Student profile. Historical attendance will reference students, so students are deactivated, not deleted."""
+    """Student profile. Historical attendance will reference students, so students are deactivated, not
+    deleted."""
 
     __tablename__ = "students"
     __table_args__ = (
@@ -19,7 +20,9 @@ class Student(TimestampMixin, Base):
     # Roll number / student ID, normalised to upper case (e.g. CSE001).
     student_code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id", ondelete="RESTRICT"), nullable=False)
+    department_id: Mapped[int] = mapped_column(
+        ForeignKey("departments.id", ondelete="RESTRICT"), nullable=False
+    )
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     section: Mapped[str] = mapped_column(String(10), nullable=False)
     email: Mapped[str | None] = mapped_column(String(254), nullable=True)

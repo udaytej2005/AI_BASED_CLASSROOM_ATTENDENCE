@@ -17,7 +17,9 @@ class AuditLog(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    actor_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     entity: Mapped[str] = mapped_column(String(64), nullable=False)
     entity_id: Mapped[str | None] = mapped_column(String(64), nullable=True)

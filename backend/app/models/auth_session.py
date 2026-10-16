@@ -8,7 +8,8 @@ from app.models.base import utcnow
 
 
 class AuthSession(Base):
-    """Server-side login session. Only a SHA-256 hash of the cookie token is stored, never the token itself."""
+    """Server-side login session. Only a SHA-256 hash of the cookie token is stored, never the token
+    itself."""
 
     __tablename__ = "auth_sessions"
     __table_args__ = (Index("ix_auth_sessions_user_id", "user_id"),)

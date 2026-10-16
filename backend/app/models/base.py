@@ -1,4 +1,5 @@
-"""Shared model helpers. Timestamps are stored in UTC and rendered in the institutional timezone by clients."""
+"""Shared model helpers. Timestamps are stored in UTC and rendered in the institutional timezone by
+clients."""
 
 from datetime import UTC, datetime
 
