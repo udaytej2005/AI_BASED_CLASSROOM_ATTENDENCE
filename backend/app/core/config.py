@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Used to sign session tokens in later phases. Must be replaced in production.
     secret_key: str = DEV_ONLY_SECRET
 
+    # Login sessions: lifetime and brute-force protection.
+    session_ttl_minutes: int = Field(default=480, ge=5, le=60 * 24)
+    login_max_failed_attempts: int = Field(default=5, ge=3, le=20)
+    login_lockout_minutes: int = Field(default=15, ge=1, le=24 * 60)
+
     # Maximum accepted size of a request body in bytes (protects against oversized uploads).
     max_request_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
 
